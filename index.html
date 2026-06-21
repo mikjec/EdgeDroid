@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Android – Egzamin</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1a1f2e 0%, #0f1117 100%);
+    border-bottom: 2px solid #3ddc84;
+    padding: 24px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .android-logo {
+    width: 36px; height: 36px;
+    background: #3ddc84;
+    border-radius: 50% 50% 0 0;
+    position: relative;
+  }
+  .android-logo::before, .android-logo::after {
+    content: '';
+    position: absolute;
+    width: 4px; height: 10px;
+    background: #3ddc84;
+    border-radius: 2px;
+    top: -10px;
+  }
+  .android-logo::before { left: 6px; transform: rotate(-20deg); }
+  .android-logo::after { right: 6px; transform: rotate(20deg); }
+  h1 { font-size: 1.4rem; font-weight: 700; color: #fff; }
+  .subtitle { font-size: 0.75rem; color: #3ddc84; letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .score-pill {
+    background: #1e2535;
+    border: 1px solid #3ddc84;
+    border-radius: 24px;
+    padding: 8px 20px;
+    font-size: 0.9rem;
+    color: #3ddc84;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* PROGRESS */
+  .progress-bar-wrap {
+    background: #1a1f2e;
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid #1e2535;
+  }
+  .progress-bar {
+    flex: 1;
+    height: 6px;
+    background: #1e2535;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #3ddc84, #00b4d8);
+    border-radius: 3px;
+    transition: width 0.4s ease;
+  }
+  .progress-label { font-size: 0.8rem; color: #64748b; white-space: nowrap; }
+
+  /* MAIN */
+  main {
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* CATEGORY BADGE */
+  .category-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #1e2535;
+    border: 1px solid #3ddc8440;
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 0.72rem;
+    color: #3ddc84;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  /* QUESTION CARD */
+  .question-card {
+    background: #1a1f2e;
+    border: 1px solid #1e2535;
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .question-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #3ddc84, #00b4d8);
+  }
+  .question-number {
+    font-size: 0.72rem;
+    color: #3ddc84;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .question-text {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: #e2e8f0;
+    font-weight: 500;
+  }
+
+  /* OPTIONS */
+  .options { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+
+  .option-btn {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 16px 20px;
+    background: #0f1117;
+    border: 1.5px solid #1e2535;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    width: 100%;
+  }
+  .option-btn:hover:not(:disabled) {
+    border-color: #3ddc8480;
+    background: #1a1f2e;
+    transform: translateX(3px);
+  }
+  .option-btn:disabled { cursor: default; }
+
+  .option-letter {
+    flex-shrink: 0;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: #1e2535;
+    border: 1.5px solid #2d3748;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #64748b;
+    transition: all 0.2s;
+  }
+
+  /* States */
+  .option-btn.correct {
+    border-color: #3ddc84;
+    background: #3ddc8415;
+  }
+  .option-btn.correct .option-letter {
+    background: #3ddc84;
+    border-color: #3ddc84;
+    color: #0f1117;
+  }
+  .option-btn.wrong {
+    border-color: #f43f5e;
+    background: #f43f5e10;
+  }
+  .option-btn.wrong .option-letter {
+    background: #f43f5e;
+    border-color: #f43f5e;
+    color: #fff;
+  }
+  .option-btn.revealed-correct {
+    border-color: #3ddc8440;
+    background: #3ddc840a;
+    opacity: 0.7;
+  }
+  .option-btn.revealed-correct .option-letter {
+    background: #3ddc84;
+    border-color: #3ddc84;
+    color: #0f1117;
+  }
+
+  /* FEEDBACK */
+  .feedback {
+    display: none;
+    margin-top: 20px;
+    padding: 14px 18px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    line-height: 1.5;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .feedback.show { display: flex; }
+  .feedback.ok { background: #3ddc8415; border: 1px solid #3ddc8440; color: #3ddc84; }
+  .feedback.err { background: #f43f5e10; border: 1px solid #f43f5e40; color: #f87171; }
+  .feedback-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+  /* NEXT BUTTON */
+  .nav-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 24px;
+  }
+  .btn-next {
+    background: #3ddc84;
+    color: #0f1117;
+    border: none;
+    border-radius: 10px;
+    padding: 14px 32px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.15s, transform 0.1s;
+  }
+  .btn-next:hover { background: #2bc872; transform: translateY(-1px); }
+  .btn-next.show { display: flex; }
+
+  /* RESULTS */
+  #results {
+    display: none;
+    text-align: center;
+    padding: 60px 24px;
+  }
+  #results.show { display: block; }
+  .results-emoji { font-size: 5rem; margin-bottom: 20px; }
+  .results-score {
+    font-size: 4rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #3ddc84, #00b4d8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .results-label { color: #64748b; margin: 8px 0 32px; font-size: 1rem; }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    max-width: 500px;
+    margin: 0 auto 40px;
+  }
+  .results-stat {
+    background: #1a1f2e;
+    border: 1px solid #1e2535;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .results-stat-value { font-size: 2rem; font-weight: 800; color: #e2e8f0; }
+  .results-stat-label { font-size: 0.72rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+  .btn-restart {
+    background: #3ddc84;
+    color: #0f1117;
+    border: none;
+    border-radius: 12px;
+    padding: 16px 40px;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-restart:hover { background: #2bc872; }
+
+  #quiz-area { display: block; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <div class="android-logo"></div>
+    <div>
+      <div class="subtitle">Egzamin</div>
+      <h1>Android Quiz</h1>
+    </div>
+  </div>
+  <div class="score-pill">
+    <span>✓</span>
+    <span id="header-score">0 / 87</span>
+  </div>
+</div>
+
+<div class="progress-bar-wrap">
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-label" id="progress-label">Pytanie 1 z 87</div>
+</div>
+
+<main>
+  <div id="quiz-area">
+    <div class="category-badge" id="category-badge">📁 Kategoria</div>
+    <div class="question-card">
+      <div class="question-number" id="q-number">PYTANIE 1</div>
+      <div class="question-text" id="q-text"></div>
+      <div class="options" id="options-list"></div>
+      <div class="feedback" id="feedback">
+        <span class="feedback-icon" id="fb-icon"></span>
+        <span id="fb-text"></span>
+      </div>
+    </div>
+    <div class="nav-row">
+      <button class="btn-next" id="btn-next" onclick="nextQuestion()">Następne pytanie →</button>
+    </div>
+  </div>
+
+  <div id="results">
+    <div class="results-emoji" id="results-emoji">🎉</div>
+    <div class="results-score" id="results-score">0%</div>
+    <div class="results-label">Twój wynik końcowy</div>
+    <div class="results-grid">
+      <div class="results-stat">
+        <div class="results-stat-value" id="r-correct" style="color:#3ddc84">0</div>
+        <div class="results-stat-label">Poprawnych</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-value" id="r-wrong" style="color:#f43f5e">0</div>
+        <div class="results-stat-label">Błędnych</div>
+      </div>
+      <div class="results-stat">
+        <div class="results-stat-value" id="r-total">87</div>
+        <div class="results-stat-label">Łącznie</div>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restartQuiz()">🔄 Zacznij od nowa</button>
+  </div>
+</main>
+
+<script>
+const QUESTIONS = [
+  // === ARCHITEKTURA I STRUKTURA ===
+  { cat: "🏗️ Architektura i struktura projektu", q: "W skład projektu aplikacji dla systemu Android wchodzą:", opts: ["Tylko pliki źródłowe java/kotlin","Pliki źródłowe, pliki zasobów, biblioteki","Tylko pliki źródłowe stworzone przez programistę i pliki wygenerowane automatycznie (np. klasa R)","Tylko pliki źródłowe i pliki zasobów"], ans: 1 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Zależności aplikacji (dodatkowe biblioteki) określa się w pliku:", opts: ["AndroidManifest.xml","build.gradle","dependencies.gradle","project.properties"], ans: 1 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Standardowo do projektu w Android Studio nie jest dołączana biblioteka:", opts: ["rt.jar","android.jar","jfx.jar","androidx"], ans: 2 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "W warstwie bibliotek nie znajduje się:", opts: ["zarządca aktywności","baza danych","obsługa SSL","silnik renderowania stron"], ans: 0 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "W systemie Android można wyróżnić następujące warstwy:", opts: ["kernel / biblioteki / framework aplikacji / aplikacje","core os / core services / warstwy multimediów / cocoa touch","core system / mobile core / phone shell","kernel / biblioteki / framework aplikacji / app launcher"], ans: 0 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Opis aplikacji przeznaczonej dla Androida zawiera:", opts: ["plik manifestu w formacie JSON","plik manifestu w formacie XML","plik project.properties","plik android.app"], ans: 1 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Ustawienie targetSdk w pliku build.gradle oznacza:", opts: ["minimalną wersję Androida (API Level) wymaganą przez aplikację","SDK wykorzystywane do skompilowania projektu","wersję Androida (API Level), której uwzględnia aplikacja","SDK, do którego autor dostosuje aplikację w przyszłości"], ans: 2 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Klasy rozmiaru okna, które należy uwzględnić tworząc aplikację dla Androida to:", opts: ["telefon / tablet / TV","watch / phone / tablet","portrait / landscape","kompaktowa / średnia / rozszerzona"], ans: 3 },
+  // === LAYOUTY, WIDOKI, STYLE ===
+  { cat: "🎨 Layouty, widoki i style", q: "Na określenie rozmieszczenia elementów względem innych pozwala:", opts: ["ConstraintLayout","LinearLayout","TableLayout","FrameLayout"], ans: 0 },
+  { cat: "🎨 Layouty, widoki i style", q: "Zarządcą układu we frameworku Android nie jest:", opts: ["FixedLayout","FrameLayout","LinearLayout","TableLayout"], ans: 0 },
+  { cat: "🎨 Layouty, widoki i style", q: "Klasą bazową dla pojemników (m.in. layoutów) jest klasa:", opts: ["Layout","LayoutBase","WidgetGroup","ViewGroup"], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Klasą bazową wszystkich komponentów graficznych w Androidzie jest klasa:", opts: ["Component","Control","View","Widget"], ans: 2 },
+  { cat: "🎨 Layouty, widoki i style", q: "Do rozmieszczania elementów w jednym wierszu lub w jednej kolumnie służy:", opts: ["FixedLayout","LinearLayout","RelativeLayout","TableLayout"], ans: 1 },
+  { cat: "🎨 Layouty, widoki i style", q: "Style:", opts: ["istnieją tylko jako standardowe style wbudowane w Androida","pozwalają na zdefiniowanie zestawów atrybutów i stosowanie ich do komponentów","nie obsługują dziedziczenia","są definiowane w plikach css"], ans: 1 },
+  { cat: "🎨 Layouty, widoki i style", q: "W aplikacjach dla Androida style:", opts: ["tworzy się w pliku XML, którego głównym elementem jest element <style>","tworzy się w pliku XML, którego głównym elementem jest element <resources>","tworzy się w pliku XML, zawierającym layout aktywności","tworzy się za pomocą klasy w kodzie Java"], ans: 1 },
+  { cat: "🎨 Layouty, widoki i style", q: "Które stwierdzenie na temat stylów nie jest prawdziwe?", opts: ["styl dziedziczy po stylu, którego nazwa jest określona w atrybucie parent","styl dziedziczy po stylu, którego nazwa jest przed kropką w atrybucie name","styl dziedziczy po stylu, którego nazwa jest przed ukośnikiem w atrybucie name","styl można zastosować jako motyw (ang. theme)"], ans: 2 },
+  { cat: "🎨 Layouty, widoki i style", q: "Lista stanów:", opts: ["typ wyliczeniowy określający stany, w których może znajdować się komponent graficzny","klasa określająca wygląd komponentu w zależności od jego stanu","to plik XML, określający stany, w których może znajdować się komponent graficzny","to plik XML, określający wygląd komponentu w zależności od jego stanu"], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Które stwierdzenie na temat kwalifikatorów zasobów w projekcie aplikacji dla Androida jest nieprawdziwe?", opts: ["pozwalają na oznaczenie elementów graficznych przeznaczonych dla określonych gęstości pikseli","pozwalają na oznaczenie zbiorów tekstów przeznaczonych dla określonych języków","pozwalają na oznaczenie układów elementów przeznaczonych dla określonych rozmiarów ekranów","wymagają uwzględnienia w kodzie Java"], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Atrybut, którego postaci nie występują w standardowych layoutach (jako powszechna forma dla standardowych komponentów Androida):", opts: ["android:własność=\"wartość\"","tools:właściwość=\"wartość\"","app:właściwość=\"wartość\"","właściwość=\"wartość\""], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Jednostka specjalnie przewidziana do określania rozmiaru tekstu to:", opts: ["mm","px","dp","sp"], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Graficzny interfejs użytkownika w Androidzie można stworzyć:", opts: ["tylko wykorzystując kod Java/Kotlin","tylko wykorzystując pliki XML","zarówno w kodzie jak i za pomocą plików XAML","zarówno w kodzie Java/Kotlin jak i za pomocą plików XML"], ans: 3 },
+  { cat: "🎨 Layouty, widoki i style", q: "Obsługi zdarzeń w Androidzie nie realizuje się za pomocą:", opts: ["rejestrowania obiektów słuchaczy, wyrażeń lambda lub referencji do metod","ustawiania w komponencie wskaźnika do funkcji obsługującej zdarzenie","definiowania atrybutu android:onClick w pliku XML","zastępowania metody obsługującej zdarzenie w klasie pochodnej"], ans: 1 },
+  { cat: "🎨 Layouty, widoki i style", q: "Opcje na pasku aplikacji:", opts: ["tworzy się w metodzie onCreateAppBarMenu() a obsługuje w onAppBarItemSelected()","tworzy się w metodzie onCreateOptionsMenu() a obsługuje w onAppBarItemSelected()","tworzy się w metodzie onCreateOptionsMenu() a obsługuje w onOptionsItemSelected()","tworzy się w metodzie onCreateAppBarMenu() a obsługuje w onOptionsItemSelected()"], ans: 2 },
+  // === CYKL ŻYCIA I AKTYWNOŚCI ===
+  { cat: "🔄 Cykl życia i aktywności", q: "Metody związane z cyklem życia aplikacji są wykonywane w następującej kolejności:", opts: ["onCreate(), onStart(), onResume(), onPause(), onStop(), onDestroy()","onCreate(), onResume(), onStart(), onStop(), onPause(), onDestroy()","onCreate(), onStart(), onResume(), onStop(), onPause(), onDestroy()","onCreate(), onStart(), onStop(), onDestroy()"], ans: 0 },
+  { cat: "🔄 Cykl życia i aktywności", q: "Które ze stwierdzeń dotyczących aktywności nie jest prawdziwe?", opts: ["stan aktywności można zachować/odtworzyć za pomocą metod onSaveInstanceState() / onRestoreInstanceState()","stan aktywności można zachować/odtworzyć za pomocą metod onSaveInstanceState() / onCreate()","stan aktywności zachowywany jest automatycznie bez ingerencji programisty","standardowo aktywności są niszczone i tworzone na nowo przy zmianie konfiguracji"], ans: 2 },
+  { cat: "🔄 Cykl życia i aktywności", q: "Aktywności nie można uruchomić za pomocą:", opts: ["metody startActivity(intencja)","metody launchMode(intencja) z klasy ActivityResultLauncher","metody executeActivity(nazwaAktywności)","metody startActivityForResult(intencja)"], ans: 2 },
+  { cat: "🔄 Cykl życia i aktywności", q: "Które stwierdzenie dotyczące obiektu pochodnego ViewModel nie jest prawdziwe:", opts: ["przechowuje dane wyświetlane w widoku","jego czas życia jest dłuższy niż aktywności","można uzyskać do niego dostęp za pomocą obiektu ViewModelProvider","jest komponentem prezentującym dane"], ans: 3 },
+  // === USŁUGI, WĄTKI ===
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Które ze stwierdzeń dotyczących usług (pochodzących z klasy Service) nie jest prawdziwe:", opts: ["domyślnie klasy pochodne nie uruchamiają własnych wątków","umożliwiają wykonywanie zadań w tle nawet gdy aplikacja nie jest widoczna na ekranie","służą do wykonywania krótkotrwałych działań","mogą pracować na rzecz innych aplikacji"], ans: 2 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "We współczesnych wersjach Androida usługi:", opts: ["mogą działać bez ograniczeń","mogą działać maksymalnie przez 5 minut","mogą działać dowolnie długo pod warunkiem, że są pierwszoplanowe","nie muszą wyświetlać powiadomień"], ans: 2 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Typem usługi w Androidzie nie jest usługa:", opts: ["kolejkująca (queuing)","związana (bounded)","niezwiązana (unbounded)","pierwszoplanowa (foreground)"], ans: 0 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Który element nie jest konieczny przy tworzeniu usługi pierwszoplanowej:", opts: ["umieszczenie uprawnienia FOREGROUND_SERVICE w manifeście","utworzenie powiadomienia","poproszenie użytkownika o nadanie uprawnienia w trakcie wykonania aplikacji","wywołanie metody startForeground() w usłudze"], ans: 2 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Do wykonywania zadań w tle w systemie Android nie można wykorzystać:", opts: ["standardowych wątków Javy","pochodnej klasy BackgroundTask","klasy HandlerThread","pochodnej klasy Service"], ans: 1 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Klasa Handler:", opts: ["może służyć do tworzenia grup wątków","może służyć do tworzenia pojedynczych wątków","umożliwia tylko dodawanie zadań do kolejki w celu jak najszybszego wykonania","może służyć do okresowego wykonywania krótkich zadań"], ans: 3 },
+  { cat: "⚙️ Usługi, wątki i zadania w tle", q: "Zadaniem kernela stosowanego w Androidzie nie jest:", opts: ["zarządzanie pamięcią","obsługa systemu plików","zarządzanie aktywnościami","zarządzanie procesami"], ans: 2 },
+  // === ROZGŁOSZENIA ===
+  { cat: "📡 Rozgłoszenia (Broadcasty)", q: "Do wysyłania rozgłoszeń (broadcasts) służy:", opts: ["metoda sentLocalBroadcast()","klasa AppBroadcastManager","klasa AppBroadcastSender","metoda sendBroadcast()"], ans: 3 },
+  { cat: "📡 Rozgłoszenia (Broadcasty)", q: "Do odbierania rozgłoszeń (broadcasts) służy:", opts: ["metoda receiveBroadcast()","klasa dziedzicząca po BroadcastReceiver","klasa dziedzicząca po AppBroadcastReceiver","metoda receiveLocalBroadcast()"], ans: 1 },
+  { cat: "📡 Rozgłoszenia (Broadcasty)", q: "Do obsługi rozgłoszeń nie jest konieczne:", opts: ["zarejestrowanie odbiorcy","wyrejestrowanie odbiorcy / użycie klasy BroadcastReceiver","użycie metod onCreate(), onReceive()","uruchomienie wątku klasy HandlerThread"], ans: 3 },
+  // === RECYCLERVIEW ===
+  { cat: "📋 RecyclerView i zasoby", q: "Zadaniem obiektu ViewHolder jest:", opts: ["utworzenie wiersza listy","przechowywanie danych wyświetlanych na liście","przechowywanie referencji do widoków (komponentów) w wierszu","obsługa zdarzeń komponentu RecyclerView"], ans: 2 },
+  { cat: "📋 RecyclerView i zasoby", q: "Do obsługi zaznaczania elementów na liście RecyclerView nie służy:", opts: ["pochodna MultiChoiceModelListener","pochodna ItemKeyProvider","pochodna ItemDetailsLookup","klasa SelectionTracker"], ans: 0 },
+  { cat: "📋 RecyclerView i zasoby", q: "Klasa R zawiera:", opts: ["identyfikatory tekstowe komponentów graficznych (widoków)","identyfikatory liczbowe rozmaitych składników aplikacji (komponentów graficznych, napisów, layoutów, menu...)","tylko identyfikatory liczbowe komponentów graficznych (widoków)","tylko identyfikatory plików XML"], ans: 1 },
+  // === GRAFIKA ===
+  { cat: "🖼️ Grafika, Canvas i SurfaceView", q: "Które stwierdzenie na temat grafiki nie jest prawdziwe?", opts: ["klasa Bitmap stanowi pojemnik na piksele","klasa Canvas zawiera metody rysujące","klasa Paint określa kolor i styl rysowanych elementów","klasa Brush określa sposób wypełniania elementów"], ans: 3 },
+  { cat: "🖼️ Grafika, Canvas i SurfaceView", q: "Stworzenie pochodnej SurfaceView i użycie wątku odświeżającego rysunek jest zalecane w przypadku tworzenia:", opts: ["niestandardowo wyglądających komponentów","komponentu odświeżanego w ramach systemowej hierarchii widoków","rzadko aktualizowanej grafiki","płynnej animacji"], ans: 3 },
+  { cat: "🖼️ Grafika, Canvas i SurfaceView", q: "Które ze stwierdzeń dotyczących klasy SurfaceView jest prawdziwe?", opts: ["jej użycie wymaga zdefiniowania metody onDraw()","nie umożliwia wyświetlania nakładek (overlays)","zapewnia powierzchnię do rysowania","jest przeznaczona do wyświetlania grafiki z użyciem OpenGL"], ans: 2 },
+  // === ROOM ===
+  { cat: "🗄️ Room i bazy danych lokalnych", q: "W aplikacji korzystającej z Room klasa repozytorium:", opts: ["reprezentuje bazę danych","łączy dane z wielu źródeł","opisuje pola rekordów","mapuje zapytania SQL na metody"], ans: 1 },
+  { cat: "🗄️ Room i bazy danych lokalnych", q: "W aplikacji korzystającej z Room interfejs DAO:", opts: ["łączy dane z wielu źródeł","reprezentuje bazę danych","opisuje pola rekordów","mapuje zapytania SQL na metody"], ans: 3 },
+  { cat: "🗄️ Room i bazy danych lokalnych", q: "W aplikacji korzystającej z Room klasa encji (Entity):", opts: ["opisuje pola rekordów","mapuje zapytania SQL na metody","łączy dane z wielu źródeł","reprezentuje bazę danych"], ans: 0 },
+  { cat: "🗄️ Room i bazy danych lokalnych", q: "Bazą danych wbudowaną w system Android jest:", opts: ["MySQL","PostgreSQL","SQL Server Express","SQLite"], ans: 3 },
+  // === RETROFIT ===
+  { cat: "🌐 Retrofit i komunikacja sieciowa", q: "W bibliotece Retrofit klasa Retrofit:", opts: ["nie korzysta ze wzorca budowniczego","nie umożliwia ustawienia adresu usługi","nie umożliwia ustawienia konwertera danych","nie realizuje samodzielnie wzorca singleton"], ans: 3 },
+  { cat: "🌐 Retrofit i komunikacja sieciowa", q: "W bibliotece Retrofit interfejs Api:", opts: ["zapewnia mapowanie punktów końcowych (endpoints) na metody","realizuje wzorzec singleton","wymaga zaimplementowania przez programistę w klasie API","nie umożliwia określenia zawartości nagłówków"], ans: 0 },
+  { cat: "🌐 Retrofit i komunikacja sieciowa", q: "W bibliotece Retrofit w klasie Call metoda enqueue():", opts: ["wykonuje żądania natychmiast w głównym wątku aplikacji","kolejkuje żądanie do wykonania w głównym wątku aplikacji","asynchronicznie wykonuje zadanie w głównym wątku","asynchronicznie wykonuje zadania w dodatkowym wątku"], ans: 3 },
+  { cat: "🌐 Retrofit i komunikacja sieciowa", q: "We współczesnych wersjach Androida aby aplikacja mogła nawiązywać połączenia sieciowe należy:", opts: ["zaimplementować żądanie dostępu do sieci w trakcie wykonania aplikacji","dodać uprawnienie INTERNET do manifestu aplikacji","dodać uprawnienie INTERNET do manifestu aplikacji i zaimplementować żądanie dostępu do sieci w trakcie wykonania aplikacji","dostęp do Internetu mają wszystkie aplikacje"], ans: 1 },
+  { cat: "🌐 Retrofit i komunikacja sieciowa", q: "We współczesnych wersjach Androida:", opts: ["można używać tylko połączeń https","można używać połączeń http i https bez dodatkowych czynności","można używać połączeń https pod warunkiem dodania certyfikatu serwera do manifestu aplikacji","można używać połączeń https, jak również http (pod warunkiem określenia wyjątku w pliku security_config.xml)"], ans: 3 },
+  // === FIREBASE ===
+  { cat: "🔥 Firebase", q: "Korzystanie z Firebase w aplikacji mobilnej nie wymaga:", opts: ["włączenia Google Analytics","stworzenia projektu w konsoli Firebase","dodania aplikacji i pobrania pliku konfiguracyjnego json","dodania zależności w plikach build.gradle"], ans: 0 },
+  { cat: "🔥 Firebase", q: "W Firebase wynikiem zapytania jest:", opts: ["kursor","kolekcja obiektów QueryDocumentSnapshot","kolekcja map reprezentujących rekordy","kolekcja map reprezentujących dokumenty"], ans: 1 },
+  { cat: "🔥 Firebase", q: "W Firebase za uwierzytelnianie użytkownika odpowiada klasa:", opts: ["FirePass","FirebaseAuth","FirebaseCheck","FirebasePasswordAuth"], ans: 1 },
+  { cat: "🔥 Firebase", q: "W Firebase za dostęp do bazy danych (np. Firestore) odpowiada klasa:", opts: ["FirebaseFirestore","Firebase","Firestore","FirebaseCloudDb"], ans: 0 },
+  { cat: "🔥 Firebase", q: "Firebase Firestore to:", opts: ["relacyjna baza danych działająca w chmurze","relacyjna baza danych działająca na urządzeniu mobilnym","dokumentowa baza danych działająca w chmurze","dokumentowa baza danych działająca na urządzeniu mobilnym"], ans: 2 },
+  // === SHAREDPREFS ===
+  { cat: "⚙️ Ustawienia współdzielone", q: "Które stwierdzenie na temat ustawień współdzielonych nie jest prawdziwe? (wariant 1)", opts: ["umożliwiają przechowywanie ustawień wspólnych dla wszystkich aplikacji","wymagają zapisywania i odczytywania danych w określonej kolejności","umożliwiają tylko przechowywanie tekstów","umożliwiają przechowywanie ustawień wspólnych dla wszystkich elementów aplikacji"], ans: 3 },
+  { cat: "⚙️ Ustawienia współdzielone", q: "Które stwierdzenie na temat ustawień współdzielonych nie jest prawdziwe? (wariant 2)", opts: ["możliwe jest reagowanie na zmianę konkretnego ustawienia","możliwe jest reagowanie na zmianę wszystkich ustawień","możliwe jest ustawienie wartości domyślnych ustawień zawsze uwzględnianych w kodzie Java/Kotlin","możliwe jest tworzenie zależności między ustawieniami"], ans: 2 },
+  { cat: "⚙️ Ustawienia współdzielone", q: "Ustawienia obsługiwane przez AndroidXPreferenceLibrary mogą być przechowywane w:", opts: ["bazie SQLite i pliku tekstowym w formacie XML","SharedPreferences i PreferenceDataStore","usłudze REST","pliku tekstowym w formacie JSON"], ans: 1 },
+  // === BEZPIECZEŃSTWO ===
+  { cat: "🔒 Bezpieczeństwo i uprawnienia", q: "W bieżących wersjach Androida:", opts: ["aplikacja musi prosić o wszystkie uprawnienia w trakcie wykonania","użytkownik zatwierdza wszystkie wymagane uprawnienia w momencie instalacji","wystarczy umieścić wszystkie wymagane uprawnienia w manifeście i aplikacja automatycznie je otrzyma","aplikacja otrzymuje minimalny zestaw uprawnień, ale musi prosić o dodatkowe w trakcie wykonania"], ans: 3 },
+  { cat: "🔒 Bezpieczeństwo i uprawnienia", q: "W Androidzie:", opts: ["każda aplikacja musi być podpisana kluczem certyfikowanego wystawcy","każda aplikacja musi być podpisana","każda aplikacja musi mieć sumę kontrolną MD5","aplikacje nie muszą być podpisane"], ans: 1 },
+  // === TESTOWANIE ===
+  { cat: "🧪 Testowanie, ADB i emulator", q: "Który krok nie jest wymagany aby używać urządzenia z Androidem do testowania aplikacji:", opts: ["uaktywnienie opcji programistycznych","włączenie debugowania USB","zainstalowanie sterowników urządzenia (Windows) / zainstalowanie lub stworzenie pliku udev rules (Linux)","zezwolenie na wykorzystanie fizycznego urządzenia w Android Studio"], ans: 3 },
+  { cat: "🧪 Testowanie, ADB i emulator", q: "Połączenie sieciowe standardowego emulatora Androida jest zrealizowane następująco:", opts: ["emulator jest widoczny w sieci jako osobne urządzenie w sieci","wszystkie działające emulatory połączone są do wspólnego wirtualnego routera","emulator jest dostępny pod adresem komputera","każdy działający emulator jest podłączony do jego własnego wirtualnego routera"], ans: 3 },
+  { cat: "🧪 Testowanie, ADB i emulator", q: "Polecenie adb nie umożliwia:", opts: ["instalowania aplikacji","dostępu do GUI Androida","wyświetlania logów","kopiowania plików"], ans: 1 },
+  { cat: "🧪 Testowanie, ADB i emulator", q: "Z czego składa się Android Debug Bridge?", opts: ["polecenia adb","klienta (polecenie adb na komputerze), serwera (na komputerze) i demona (na urządzeniu z Androidem)","klienta (polecenie adb na komputerze) i serwera (na urządzeniu z Androidem)","klienta (polecenie adb na komputerze) i demona (na komputerze)"], ans: 1 },
+  { cat: "🧪 Testowanie, ADB i emulator", q: "Którego hiperwizora nie wykorzystuje standardowy emulator systemu Android?", opts: ["Kernel-based Virtual Machine","VirtualBox","Android Emulator Hypervisor Driver for AMD Processors","Windows Hypervisor Platform"], ans: 1 },
+  // === WIELE URZĄDZEŃ ===
+  { cat: "📱 Wsparcie wielu urządzeń", q: "W aplikacjach wspierających wiele rodzajów urządzeń nie jest zalecane:", opts: ["tworzenie elastycznych layoutów","tworzenie alternatywnych layoutów","stosowanie rozmiarów elementów wyrażonych w \"dp\" zamiast wrap_content/match_parent/match_constraint","testowanie na ekranach o różnych proporcjach"], ans: 2 },
+  { cat: "📱 Wsparcie wielu urządzeń", q: "Który opis elementu interfejsu systemu Wear OS jest niewłaściwy:", opts: ["komplikacja – element prezentujący informacje, którą użytkownik będzie sprawdzał wiele razy dziennie","powiadomienie – prezentuje ważne informacje, zapewnia akcje kontekstowe","kafelek – zapewnia szybki dostęp do ważnych informacji / akcji","nakładki – elementy wyświetlane nad innymi"], ans: 3 },
+  { cat: "📱 Wsparcie wielu urządzeń", q: "Które stwierdzenia dotyczące aplikacji dla Android TV nie są prawdziwe?", opts: ["powinna być przystosowana do sterowania pilotem","powinna deklarować, że nie wymaga ekranu dotykowego","mieć aktywność z kategorią LEANBACK_LAUNCHER","musi deklarować, że wymaga launchera Leanback"], ans: 3 },
+  { cat: "📱 Wsparcie wielu urządzeń", q: "Które ze stwierdzeń na temat odtwarzacza MediaPlayer jest fałszywe?", opts: ["odtwarzacz może znajdować się w jednym z wielu stanów i należy wywoływać tylko metody dozwolone w danym stanie","obsługiwane są media strumieniowe","wszystkie metody odtwarzacza mogą być wywołane niezależnie od stanu, w jakim się on znajduje (bez zgłaszania wyjątku)","obsługiwane są media identyfikowane za pomocą URI"], ans: 2 },
+  // === FLUTTER ===
+  { cat: "🐦 Flutter / Dart", q: "Przycisk ElevatedButton można zdezaktywować:", opts: ["ustawiając parametr onPressed konstruktora na pustą funkcję () {}","ustawiając parametr disabled konstruktora na true","ustawiając parametr onPressed konstruktora na null","ustawiając parametr enabled konstruktora na false"], ans: 2 },
+  { cat: "🐦 Flutter / Dart", q: "Do reagowania na zdarzenia takie jak naciśnięcie, przesunięcie czy zwolnienie służy:", opts: ["MouseRegion","GestureDetector","Listener","MouseDetector"], ans: 1 },
+  { cat: "🐦 Flutter / Dart", q: "Który opis struktury danych w języku Dart jest nieprawdziwy?", opts: ["{'a': 1} – mapa","[] – pusta lista","[1, 2] – lista","{} – pusty zbiór"], ans: 3 },
+  { cat: "🐦 Flutter / Dart", q: "Szablonem aplikacji Material Design jest:", opts: ["Scaffold","Template","MaterialScaffold","FlutterApp"], ans: 0 },
+  { cat: "🐦 Flutter / Dart", q: "Do przebudowania interfejsu aplikacji w momencie pojawienia się wartości w przyszłości służy:", opts: ["klasa FutureBuilder","metoda whenReady()","klasa FutureListener","metoda rebuildUI()"], ans: 0 },
+  { cat: "🐦 Flutter / Dart", q: "Klasa Platform nie pozwala na sprawdzenie:", opts: ["nazwy komputera","wartości zmiennych środowiskowych","właściwości okna aplikacji","systemu operacyjnego"], ans: 2 },
+  { cat: "🐦 Flutter / Dart", q: "Uzyskanie informacji o standardowych ścieżkach przechowywania plików umożliwia biblioteka:", opts: ["path_environment","file_locations","path_provider","default_dirs"], ans: 2 },
+  // === DODATKOWE (z Java egzamin) ===
+  { cat: "📡 Rozgłoszenia (Broadcasty)", q: "Które stwierdzenie dotyczące odbiorców rozgłoszeń (broadcast receivers) jest fałszywe?", opts: ["umożliwiają przesyłanie informacji pomiędzy składnikami tej samej aplikacji","może działać dowolnie długo (jak usługa)","umożliwia reagowanie na zdarzenia systemowe","umożliwia reagowanie na rozgłoszenia dowolnego typu (w tym samodzielnie utworzone)"], ans: 1 },
+  { cat: "⚙️ Ustawienia współdzielone", q: "Do modyfikacji ustawień współdzielonych w GUI można wykorzystać:", opts: ["pochodną SettingsActivity","pochodną PreferenceFragmentCompat","ustawienia można modyfikować tylko w kodzie Java/Kotlin","tylko standardową aktywność dziedziczącą po Activity"], ans: 1 },
+  { cat: "🔄 Cykl życia i aktywności", q: "Które stwierdzenie dotyczące fragmentów nie jest prawdziwe?", opts: ["fragmenty są mini-aktywnościami, można umieścić ich kilka w jednej aktywności","komunikacja między fragmentami powinna odbywać się za pośrednictwem aktywności","w aktywności może znajdować się tylko jeden fragment w danym momencie","zostały wprowadzone w Androidzie 3.0"], ans: 2 },
+  { cat: "📋 RecyclerView i zasoby", q: "Aby wyświetlić dane w komponencie RecyclerView należy:", opts: ["ustawić źródło danych (ArrayList) w komponencie RecyclerView","ustawić prezentera (RecyclerView) w źródle danych (ArrayList)","utworzyć adapter dziedziczący po RecyclerView.Adapter, ustawić źródło danych i ustawić adapter w prezenterze (RecyclerView)","utworzyć adapter dziedziczący po ArrayAdapter"], ans: 2 },
+  { cat: "🖼️ Grafika, Canvas i SurfaceView", q: "Stworzenie komponentu z własną metodą onDraw() i odświeżanie jego zawartości za pomocą metody invalidate() jest zalecane w przypadku tworzenia:", opts: ["płynnej animacji 2D","płynnej animacji 3D","rzadko aktualizowanej grafiki","interaktywnej animacji"], ans: 2 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Środowiskiem uruchomieniowym (runtime) w Androidzie jest:", opts: ["CLR","android runtime (ART)","android API","maszyna wirtualna dalvik"], ans: 1 },
+  { cat: "🎨 Layouty, widoki i style", q: "Które stwierdzenie na temat jednostki \"dp\" jest nieprawdziwe?", opts: ["rozwinięcie skrótu to device/density independent pixel","1 dp to jeden piksel na ekranie","1 dp to pewna liczba pikseli zależna od gęstości pikseli na ekranie","pozwala na uzyskanie określonych rozmiarów elementów niezależnie od gęstości pikseli"], ans: 1 },
+  { cat: "🏗️ Architektura i struktura projektu", q: "Google dostarcza narzędzia do tworzenia aplikacji na Androida dla następujących systemów (wybierz odpowiedź uwzględniającą wszystkie systemy):", opts: ["Windows / Linux","Windows / Linux / FreeBSD","Windows / Linux / MacOS / ChromeOS","Windows / MacOS"], ans: 2 },
+];
+
+// Shuffle
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+let questions = shuffle(QUESTIONS);
+let current = 0;
+let correct = 0;
+let answered = false;
+
+function renderQuestion() {
+  const q = questions[current];
+  document.getElementById('category-badge').textContent = q.cat;
+  document.getElementById('q-number').textContent = `PYTANIE ${current + 1}`;
+  document.getElementById('q-text').textContent = q.q;
+
+  const total = questions.length;
+  document.getElementById('progress-fill').style.width = `${(current / total) * 100}%`;
+  document.getElementById('progress-label').textContent = `Pytanie ${current + 1} z ${total}`;
+
+  // Shuffle options
+  const idxMap = q.opts.map((_, i) => i);
+  const shuffled = shuffle(idxMap);
+  const letters = ['A','B','C','D'];
+
+  const container = document.getElementById('options-list');
+  container.innerHTML = '';
+  shuffled.forEach((origIdx, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.dataset.orig = origIdx;
+    btn.innerHTML = `<span class="option-letter">${letters[i]}</span><span>${q.opts[origIdx]}</span>`;
+    btn.addEventListener('click', () => selectAnswer(btn, origIdx));
+    container.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('btn-next').className = 'btn-next';
+  answered = false;
+}
+
+function selectAnswer(btn, origIdx) {
+  if (answered) return;
+  answered = true;
+
+  const q = questions[current];
+  const isCorrect = origIdx === q.ans;
+  const fb = document.getElementById('feedback');
+  const allBtns = document.querySelectorAll('.option-btn');
+
+  allBtns.forEach(b => {
+    b.disabled = true;
+    const bOrig = parseInt(b.dataset.orig);
+    if (bOrig === q.ans && bOrig !== origIdx) {
+      b.classList.add('revealed-correct');
+    }
+  });
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    correct++;
+    fb.className = 'feedback ok show';
+    document.getElementById('fb-icon').textContent = '✓';
+    document.getElementById('fb-text').textContent = 'Poprawna odpowiedź!';
+  } else {
+    btn.classList.add('wrong');
+    fb.className = 'feedback err show';
+    document.getElementById('fb-icon').textContent = '✗';
+    document.getElementById('fb-text').textContent = `Błąd. Poprawna odpowiedź to: ${q.opts[q.ans]}`;
+  }
+
+  document.getElementById('header-score').textContent = `${correct} / ${questions.length}`;
+  document.getElementById('btn-next').className = 'btn-next show';
+}
+
+function nextQuestion() {
+  current++;
+  if (current >= questions.length) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  document.getElementById('quiz-area').style.display = 'none';
+  const results = document.getElementById('results');
+  results.className = 'show';
+  const pct = Math.round((correct / questions.length) * 100);
+  document.getElementById('results-score').textContent = `${pct}%`;
+  document.getElementById('r-correct').textContent = correct;
+  document.getElementById('r-wrong').textContent = questions.length - correct;
+  document.getElementById('r-total').textContent = questions.length;
+  document.getElementById('results-emoji').textContent =
+    pct >= 90 ? '🏆' : pct >= 70 ? '🎉' : pct >= 50 ? '😊' : '📚';
+  document.getElementById('progress-fill').style.width = '100%';
+  document.getElementById('progress-label').textContent = `Ukończono! ${pct}%`;
+}
+
+function restartQuiz() {
+  questions = shuffle(QUESTIONS);
+  current = 0; correct = 0;
+  document.getElementById('quiz-area').style.display = 'block';
+  document.getElementById('results').className = '';
+  document.getElementById('header-score').textContent = `0 / ${questions.length}`;
+  renderQuestion();
+}
+
+renderQuestion();
+</script>
+</body>
+</html>
